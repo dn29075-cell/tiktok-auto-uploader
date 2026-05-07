@@ -1,0 +1,24 @@
+# Node
+electron/node_modules/
+electron/node_modules
+node_modules/
+
+# Build output
+dist/
+backend-dist/
+build-tmp/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.spec
+
+# Temp
+*.log
+.DS_Store
+Thumbs.db
+
+# Python venv
+venv/
+.venv/
+env/
