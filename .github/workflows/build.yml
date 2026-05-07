@@ -1,17 +1,17 @@
 # .github/workflows/build.yml
-# Tự động build và release khi push tag "v*"
+# Tu dong build va release khi push tag "v*"
 #
-# Cách dùng:
+# Cach dung:
 #   git tag v2.0.1
 #   git push origin v2.0.1
-# → GitHub Actions tự build installer và tạo Release
+# -> GitHub Actions tu build installer va tao Release
 
 name: Build & Release
 
 on:
   push:
     tags:
-      - 'v*'    # trigger khi push tag dạng v1.0.0, v2.1.3, ...
+      - 'v*'
 
 jobs:
   build:
@@ -31,19 +31,25 @@ jobs:
         with:
           node-version: '20'
 
-      # ── Build Python backend → backend.exe ──────────────────────────────
+      # Build Python backend -> backend.exe
       - name: Install Python dependencies
         run: |
-          pip install pyinstaller fastapi uvicorn[standard] websockets pydantic requests
+          pip install pyinstaller fastapi "uvicorn[standard]" websockets pydantic requests
 
       - name: Build backend with PyInstaller
         run: |
-          cd backend
+          $backendDir = "${{ github.workspace }}\backend"
+          $coreDir    = "$backendDir\core"
+          $distDir    = "${{ github.workspace }}\backend-dist"
+          $workDir    = "${{ github.workspace }}\build-tmp\backend"
+          $specDir    = "${{ github.workspace }}\build-tmp"
+
+          Set-Location $backendDir
           pyinstaller api.py `
             --name backend `
             --onefile `
             --noconsole `
-            --add-data "core;core" `
+            --add-data "$coreDir;core" `
             --hidden-import uvicorn `
             --hidden-import uvicorn.logging `
             --hidden-import uvicorn.loops `
@@ -58,28 +64,32 @@ jobs:
             --hidden-import fastapi `
             --hidden-import pydantic `
             --hidden-import websockets `
-            --distpath ..\backend-dist `
-            --workpath ..\build-tmp\backend `
-            --specpath ..\build-tmp
+            --distpath $distDir `
+            --workpath $workDir `
+            --specpath $specDir
 
-      # ── Build Electron → installer ───────────────────────────────────────
+      # Build Electron -> installer
       - name: Install Electron dependencies
         run: |
-          cd electron
+          Set-Location "${{ github.workspace }}\electron"
           npm ci
 
       - name: Build Electron installer
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # cho phép publish release
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          WIN_CSC_LINK: ""
         run: |
-          cd electron
+          Set-Location "${{ github.workspace }}\electron"
           npm run build:win
 
-      # ── Upload artifacts ─────────────────────────────────────────────────
+      # Upload artifacts
       - name: Upload installer to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.exe
+          files: |
+            dist/*.exe
+            dist/latest.yml
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
