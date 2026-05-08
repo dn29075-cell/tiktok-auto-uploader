@@ -24,43 +24,76 @@ _UPLOAD_LOCK = threading.Lock()
 # ── Folder helpers ────────────────────────────────────────────────────────────
 
 def folder_name_for(date: datetime.date) -> str:
-    """0605 cho ngày 06 tháng 05."""
-    return date.strftime("%d%m")
+    """Trả về tên folder ngày dạng DD (vd: '08')."""
+    return f"{date.day:02d}"
 
 
 def find_date_folder(base: str, target: datetime.date) -> Optional[Path]:
     """
-    Tìm subfolder trong base khớp với ngày target.
-    Ưu tiên DDMM, sau đó thử nhiều format khác.
+    Tìm subfolder chứa video cho ngày target.
+
+    Ưu tiên theo thứ tự:
+      1. base/MM/DD          ← cấu trúc CHÍNH (tháng → ngày)
+      2. base/M/DD           ← tháng không có số 0 (5, 6...)
+      3. base/DDMM           ← cấu trúc cũ (backward compat)
+      4. Các format phẳng khác
+
+    Ví dụ ngày 08/05/2026:
+      base/05/08  ✓ (chuẩn)
+      base/5/08   ✓
+      base/0805   ✓ (cũ)
     """
     base_p = Path(base)
     if not base_p.is_dir():
         return None
 
-    # 1. DDMM (format chính)
-    p = base_p / folder_name_for(target)
+    d_zero = f"{target.day:02d}"      # "08"
+    d_bare = str(target.day)          # "8"
+    m_zero = f"{target.month:02d}"    # "05"
+    m_bare = str(target.month)        # "5"
+    y_str  = str(target.year)
+
+    # ── 1. Cấu trúc MỚI: base / MM / DD ──────────────────────────────────
+    # Thử tất cả biến thể tên tháng
+    month_candidates = [m_zero, m_bare]
+    for m_folder in month_candidates:
+        month_p = base_p / m_folder
+        if not month_p.is_dir():
+            continue
+        # Tìm folder ngày bên trong
+        for d_folder in [d_zero, d_bare]:
+            day_p = month_p / d_folder
+            if day_p.is_dir():
+                return day_p
+
+    # ── 2. Cấu trúc cũ: base / DDMM ──────────────────────────────────────
+    p = base_p / f"{d_zero}{m_zero}"
     if p.is_dir():
         return p
 
-    # 2. Các format phụ
+    # ── 3. Các format phẳng khác ──────────────────────────────────────────
     for fmt in ["%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y",
                 "%Y%m%d", "%d%m%Y", "%d_%m_%Y", "%Y_%m_%d"]:
         p = base_p / target.strftime(fmt)
         if p.is_dir():
             return p
 
-    # 3. Fuzzy: tên chứa ngày + tháng
-    d = f"{target.day:02d}"
-    m = f"{target.month:02d}"
-    y = str(target.year)
+    # ── 4. Fuzzy trong base: tên chứa ngày + tháng ────────────────────────
     for folder in sorted(base_p.iterdir()):
         if not folder.is_dir():
             continue
         n = folder.name
-        if d in n and m in n and (y in n or len(n) <= 6):
+        if d_zero in n and m_zero in n and (y_str in n or len(n) <= 6):
             return folder
 
     return None
+
+
+def expected_folder_path(base: str, target: datetime.date) -> str:
+    """Trả về path dự kiến để hiển thị trong log khi không tìm thấy folder."""
+    m = f"{target.month:02d}"
+    d = f"{target.day:02d}"
+    return f"{base}\\{m}\\{d}"
 
 
 def scan_videos(folder: Path) -> list:
@@ -229,10 +262,11 @@ def run_pipeline(target_date: datetime.date, log: Callable = print) -> PipelineR
     Trả về PipelineResult.
     """
     result = PipelineResult()
-    date_str = target_date.strftime("%d/%m/%Y")
-    folder_n = folder_name_for(target_date)
+    date_str  = target_date.strftime("%d/%m/%Y")
+    m_str     = f"{target_date.month:02d}"
+    d_str     = f"{target_date.day:02d}"
 
-    log(f"═══ PIPELINE BẮT ĐẦU — {date_str} (folder: {folder_n}) ═══")
+    log(f"═══ PIPELINE BẮT ĐẦU — {date_str} (tìm folder: {m_str}/{d_str}) ═══")
 
     # ── Kiểm tra cấu hình ────────────────────────────────────────────────
     base = cfg.video_base_path
@@ -250,7 +284,9 @@ def run_pipeline(target_date: datetime.date, log: Callable = print) -> PipelineR
     # ── Tìm folder ────────────────────────────────────────────────────────
     folder = find_date_folder(base, target_date)
     if not folder:
-        log(f"❌ Không tìm thấy folder '{folder_n}' trong: {base}")
+        expected = expected_folder_path(base, target_date)
+        log(f"❌ Không tìm thấy folder ngày {date_str}")
+        log(f"   Cần tạo: {expected}")
         return result
 
     log(f"📁 Folder: {folder}")
