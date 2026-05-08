@@ -24,6 +24,7 @@
   <div class="titlebar-title">
     <span class="app-icon">⬆</span>
     TikTok Auto Uploader
+    <span class="app-version" id="app-version"></span>
   </div>
 
   <div class="titlebar-status" id="titlebar-status">
@@ -287,9 +288,21 @@
 
 <!-- Update banner (ẩn mặc định) -->
 <div class="update-banner hidden" id="update-banner">
-  <span>🆕 Có bản cập nhật mới!</span>
-  <button class="btn btn-green btn-sm" id="btn-download-update">Tải về</button>
-  <button class="btn btn-blue  btn-sm" id="btn-install-update" style="display:none">Cài ngay</button>
+  <div class="update-banner-top">
+    <span class="update-banner-icon">🆕</span>
+    <span class="update-banner-title" id="update-title">Có bản cập nhật mới!</span>
+  </div>
+  <div class="update-banner-progress hidden" id="update-progress-wrap">
+    <div class="update-prog-track">
+      <div class="update-prog-fill" id="update-prog-fill"></div>
+    </div>
+    <span class="update-prog-pct" id="update-prog-pct">0%</span>
+  </div>
+  <div class="update-banner-speed hidden" id="update-speed"></div>
+  <div class="update-banner-actions">
+    <button class="btn btn-green btn-sm" id="btn-download-update">⬇ Tải về</button>
+    <button class="btn btn-blue  btn-sm" id="btn-install-update" style="display:none">🚀 Cài ngay</button>
+  </div>
 </div>
 
 <script src="app.js"></script>

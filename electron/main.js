@@ -173,6 +173,9 @@ ipcMain.handle("dialog:openFile", async (_, filters) => {
   return result.canceled ? null : result.filePaths[0];
 });
 
+// App version
+ipcMain.handle("app:getVersion", () => app.getVersion());
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Auto-updater (production only)
 // ══════════════════════════════════════════════════════════════════════════════

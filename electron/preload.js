@@ -68,6 +68,9 @@ contextBridge.exposeInMainWorld("api", {
   deleteRetry:  (idx) => apiCall("DELETE", `/retry/${idx}`),
   clearRetry:   ()    => apiCall("DELETE", "/retry"),
 
+  // ── App info ──────────────────────────────────────────────────────────────
+  getVersion: () => ipcRenderer.invoke("app:getVersion"),
+
   // ── IPC — Window controls ─────────────────────────────────────────────────
   minimize: () => ipcRenderer.send("window:minimize"),
   maximize: () => ipcRenderer.send("window:maximize"),

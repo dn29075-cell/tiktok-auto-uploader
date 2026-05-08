@@ -59,20 +59,56 @@ window.addEventListener("DOMContentLoaded", () => {
     // Backend chưa sẵn sàng — đợi event
   });
 
+  // Hiện version hiện tại trên titlebar
+  if (api.getVersion) {
+    api.getVersion().then(v => {
+      const el = $("app-version");
+      if (el) el.textContent = `v${v}`;
+    }).catch(() => {});
+  }
+
   // Auto-update
   api.onUpdateAvail(info => {
     $("update-banner").classList.remove("hidden");
-    $("btn-download-update").textContent = `Tải về v${info.version}`;
+    $("update-title").textContent = `Có bản cập nhật v${info.version}!`;
+    $("btn-download-update").textContent = `⬇ Tải về v${info.version}`;
   });
   api.onUpdateProgress(p => {
-    $("btn-download-update").textContent = `${Math.round(p.percent)}%...`;
+    const pct = Math.round(p.percent || 0);
+    // Hiện progress bar
+    $("update-progress-wrap").classList.remove("hidden");
+    $("update-prog-fill").style.width  = pct + "%";
+    $("update-prog-pct").textContent   = pct + "%";
+    // Hiện tốc độ download
+    const speedEl = $("update-speed");
+    if (p.bytesPerSecond > 0) {
+      const speedMB    = (p.bytesPerSecond / 1048576).toFixed(1);
+      const totalMB    = p.total  ? (p.total   / 1048576).toFixed(1) : "?";
+      const transferMB = p.transferred ? (p.transferred / 1048576).toFixed(1) : "0";
+      speedEl.textContent = `${transferMB} / ${totalMB} MB  —  ${speedMB} MB/s`;
+      speedEl.classList.remove("hidden");
+    }
+    // Disable nút tải trong khi đang tải
+    $("btn-download-update").disabled    = true;
+    $("btn-download-update").textContent = `${pct}%...`;
+    // Title
+    $("update-title").textContent = `Đang tải bản cập nhật...`;
   });
   api.onUpdateReady(() => {
+    $("update-prog-fill").style.width  = "100%";
+    $("update-prog-pct").textContent   = "100%";
+    $("update-title").textContent      = "✅ Đã tải xong! Cài ngay?";
+    $("update-speed").classList.add("hidden");
     $("btn-download-update").style.display = "none";
-    $("btn-install-update").style.display = "";
+    $("btn-install-update").style.display  = "";
   });
-  $("btn-download-update").onclick = () => api.downloadUpdate();
-  $("btn-install-update").onclick  = () => api.installUpdate();
+  $("btn-download-update").onclick = () => {
+    $("btn-download-update").disabled    = true;
+    $("btn-download-update").textContent = "⏳ Đang bắt đầu...";
+    $("update-title").textContent        = "Đang tải bản cập nhật...";
+    api.downloadUpdate();
+  };
+  $("btn-install-update").onclick = () => api.installUpdate();
 });
 
 async function initApp() {
