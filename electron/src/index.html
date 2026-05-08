@@ -238,6 +238,22 @@
             <button class="btn btn-blue pill px-24" id="btn-save-cfg">💾 Lưu cài đặt</button>
           </div>
           <div class="fs-12 mt-6 text-center" id="lbl-cfg-saved"></div>
+
+          <div class="divider"></div>
+          <div class="section-title mb-8">📁 Tạo thư mục tự động</div>
+          <div class="form-row">
+            <label class="form-label">Folder gốc</label>
+            <input class="input flex-1" id="mkdir-path" placeholder="K:\Test folder"/>
+            <button class="btn btn-ghost btn-sm ml-8" id="btn-mkdir-browse">📂</button>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Tháng / Năm</label>
+            <input class="input w-60" id="mkdir-month" type="number" min="1" max="12" placeholder="5"/>
+            <span class="text-muted mx-8">/</span>
+            <input class="input w-90" id="mkdir-year" type="number" placeholder="2026"/>
+            <button class="btn btn-green pill px-16 ml-8" id="btn-create-folders">📁 Tạo</button>
+          </div>
+          <div class="fs-12 mt-4" id="lbl-mkdir-result"></div>
         </div>
       </div>
     </div><!-- #tab-settings -->

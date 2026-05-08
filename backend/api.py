@@ -603,6 +603,57 @@ def clear_retry():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# /folders — tạo cấu trúc thư mục tháng/ngày
+# ══════════════════════════════════════════════════════════════════════════════
+
+import calendar as _calendar
+
+class CreateFoldersBody(BaseModel):
+    base_path: str
+    year:  int
+    month: int
+
+
+@app.post("/folders/create")
+def create_folders(body: CreateFoldersBody):
+    base = Path(body.base_path.strip())
+    if not base.exists():
+        raise HTTPException(400, f"Folder không tồn tại: {body.base_path}")
+    if not (1 <= body.month <= 12):
+        raise HTTPException(400, "Tháng phải từ 1 đến 12")
+    if body.year < 2000 or body.year > 2100:
+        raise HTTPException(400, "Năm không hợp lệ")
+
+    m_str    = f"{body.month:02d}"
+    num_days = _calendar.monthrange(body.year, body.month)[1]
+
+    created  = []
+    existing = []
+
+    for day in range(1, num_days + 1):
+        d_str   = f"{day:02d}"
+        day_dir = base / m_str / d_str
+        if day_dir.exists():
+            existing.append(d_str)
+        else:
+            day_dir.mkdir(parents=True, exist_ok=True)
+            created.append(d_str)
+
+    msg = f"✅ Tạo {len(created)} folder mới trong {base / m_str}"
+    if existing:
+        msg += f" ({len(existing)} đã có sẵn)"
+    _log(msg)
+
+    return {
+        "ok":       True,
+        "month_dir": str(base / m_str),
+        "created":  len(created),
+        "existing": len(existing),
+        "total":    num_days,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Run standalone (dev + PyInstaller bundle)
 # ══════════════════════════════════════════════════════════════════════════════
 

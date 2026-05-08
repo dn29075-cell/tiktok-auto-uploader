@@ -59,6 +59,9 @@ contextBridge.exposeInMainWorld("api", {
   aiCaption:    (video_path, tpl) => apiCall("POST", "/videos/caption-ai", { video_path, tpl_idx: tpl }),
   uploadVideo:  (video_path, cap) => apiCall("POST", "/videos/upload",     { video_path, caption: cap }),
 
+  // ── Folders ───────────────────────────────────────────────────────────────
+  createFolders: (base_path, year, month) => apiCall("POST", "/folders/create", { base_path, year, month }),
+
   // ── Retry ─────────────────────────────────────────────────────────────────
   getRetry:     ()    => apiCall("GET",    "/retry"),
   runRetry:     ()    => apiCall("POST",   "/retry/run"),

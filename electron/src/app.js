@@ -576,6 +576,48 @@ function setupSettingsTab() {
     if (p) $("cfg-video-path").value = p;
   };
 
+  // ── Tạo thư mục tự động ───────────────────────────────────────────────────
+  $("btn-mkdir-browse").onclick = async () => {
+    const p = await api.openFolder();
+    if (p) $("mkdir-path").value = p;
+  };
+
+  $("btn-create-folders").onclick = async () => {
+    const base_path = $("mkdir-path").value.trim();
+    const month     = parseInt($("mkdir-month").value);
+    const year      = parseInt($("mkdir-year").value);
+    const lbl       = $("lbl-mkdir-result");
+
+    if (!base_path) {
+      lbl.textContent = "⚠️ Chưa nhập đường dẫn folder!";
+      lbl.className   = "fs-12 mt-4 text-amber";
+      return;
+    }
+    if (!month || month < 1 || month > 12) {
+      lbl.textContent = "⚠️ Tháng không hợp lệ (1 - 12)!";
+      lbl.className   = "fs-12 mt-4 text-amber";
+      return;
+    }
+    if (!year || year < 2020 || year > 2100) {
+      lbl.textContent = "⚠️ Năm không hợp lệ!";
+      lbl.className   = "fs-12 mt-4 text-amber";
+      return;
+    }
+
+    lbl.textContent = "⏳ Đang tạo thư mục...";
+    lbl.className   = "fs-12 mt-4 text-muted";
+
+    try {
+      const res = await api.createFolders(base_path, year, month);
+      lbl.textContent = `✅ Tạo ${res.created} folder mới${res.existing ? ` (${res.existing} đã có sẵn)` : ""} — ${res.month_dir}`;
+      lbl.className   = "fs-12 mt-4 text-green";
+      toast(`✅ Đã tạo ${res.created}/${res.total} folder cho tháng ${month}/${year}`, "ok", 3000);
+    } catch (e) {
+      lbl.textContent = "❌ " + e.message;
+      lbl.className   = "fs-12 mt-4 text-red";
+    }
+  };
+
   $("btn-save-cfg").onclick = async () => {
     const data = {
       video_base_path:   $("cfg-video-path").value.trim(),
@@ -616,6 +658,14 @@ async function loadSettings() {
     // Cũng fill manual base path
     if (cfg.video_base_path) $("inp-base-path").value = cfg.video_base_path;
     if (cfg.schedule_time)   $("inp-stime").value     = cfg.schedule_time;
+
+    // Tạo folder: pre-fill tháng/năm hiện tại
+    const now = new Date();
+    if (!$("mkdir-month").value) $("mkdir-month").value = now.getMonth() + 1;
+    if (!$("mkdir-year").value)  $("mkdir-year").value  = now.getFullYear();
+    // Pre-fill folder gốc nếu đã có trong config
+    if (cfg.video_base_path && !$("mkdir-path").value)
+      $("mkdir-path").value = cfg.video_base_path;
   } catch (e) {
     console.error("loadSettings error:", e);
   }
