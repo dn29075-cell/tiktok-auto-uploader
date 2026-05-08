@@ -77,8 +77,7 @@ jobs:
       - name: Build Electron installer
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-          WIN_CSC_LINK: ""
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: |
           Set-Location "${{ github.workspace }}\electron"
           npm run build:win
