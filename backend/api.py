@@ -37,6 +37,7 @@ import sys
 import io
 import threading
 import datetime
+import calendar as _calendar
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -605,8 +606,6 @@ def clear_retry():
 # ══════════════════════════════════════════════════════════════════════════════
 # /folders — tạo cấu trúc thư mục tháng/ngày
 # ══════════════════════════════════════════════════════════════════════════════
-
-import calendar as _calendar
 
 class CreateFoldersBody(BaseModel):
     base_path: str

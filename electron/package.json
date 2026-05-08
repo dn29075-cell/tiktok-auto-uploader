@@ -1,6 +1,6 @@
 {
   "name": "tiktok-auto-uploader",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "TikTok Auto Uploader - tu dong upload video hang ngay",
   "author": "TikTok Uploader Dev",
   "main": "main.js",

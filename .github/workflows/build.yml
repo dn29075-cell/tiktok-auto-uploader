@@ -66,6 +66,7 @@ jobs:
             --hidden-import fastapi `
             --hidden-import pydantic `
             --hidden-import websockets `
+            --hidden-import calendar `
             --distpath $distDir `
             --workpath $workDir `
             --specpath $specDir
