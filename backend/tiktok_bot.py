@@ -421,7 +421,15 @@ async def upload_video(
 
             # ── 5. Nhấn Post ─────────────────────────────────────────────────
             _log("[TikTok] Nhấn Post...", log)
-            await post_btn.click()
+            # Dismiss bất kỳ modal nào đang chặn trước khi click
+            await _dismiss_all_overlays(page, log)
+            await page.wait_for_timeout(500)
+            try:
+                await post_btn.click()
+            except Exception:
+                # Nếu vẫn bị chặn → force click qua JS
+                _log("[TikTok] Post bị chặn → thử force click...", log)
+                await post_btn.evaluate("el => el.click()")
             await page.wait_for_timeout(2000)
 
             # ── 5b. Xử lý dialog sau Post ────────────────────────────────────
@@ -485,11 +493,108 @@ def _set_clipboard_text(text: str) -> None:
 
 # ─── Caption helpers ──────────────────────────────────────────────────────────
 
+async def _dismiss_tux_modal(page, log: Optional[Callable]) -> bool:
+    """
+    Đóng TUXModal-overlay — loại modal mới của TikTok (2025+).
+    Modal này dùng data-floating-ui-portal và chặn toàn bộ pointer events.
+    """
+    try:
+        modal = page.locator(".TUXModal-overlay, [class*='TUXModal']").first
+        if not await modal.is_visible():
+            return False
+
+        _log("[TikTok] Phát hiện TUXModal — đang xử lý...", log)
+
+        # 1. Thử click các nút xác nhận bên trong modal
+        confirm_texts = [
+            "Post now", "Đăng ngay", "Đăng",
+            "Continue", "Tiếp tục",
+            "Confirm", "Xác nhận",
+            "OK", "Got it", "Hiểu rồi",
+            "Proceed", "Đồng ý",
+            "Upload", "Tải lên",
+            "Next", "Tiếp theo",
+            "Allow", "Cho phép",
+            "Done", "Xong",
+        ]
+        for text in confirm_texts:
+            try:
+                btn = modal.get_by_role("button", name=text, exact=False).first
+                if await btn.is_visible():
+                    _log(f"[TikTok] TUXModal — click '{text}'", log)
+                    await btn.click()
+                    await page.wait_for_timeout(1000)
+                    return True
+            except Exception:
+                pass
+
+        # 2. Thử click bất kỳ button visible nào trong modal
+        try:
+            btns = await modal.locator("button").all()
+            for btn in reversed(btns):   # reversed: nút chính thường ở cuối
+                try:
+                    if await btn.is_visible() and await btn.is_enabled():
+                        txt = (await btn.inner_text()).strip()
+                        _log(f"[TikTok] TUXModal — click button: '{txt}'", log)
+                        await btn.click()
+                        await page.wait_for_timeout(1000)
+                        return True
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # 3. Thử Escape
+        await page.keyboard.press("Escape")
+        await page.wait_for_timeout(600)
+
+        # 4. JS ẩn cứng modal (last resort)
+        await page.evaluate("""
+            document.querySelectorAll(
+                '.TUXModal-overlay, [class*="TUXModal"], [data-floating-ui-portal]'
+            ).forEach(e => {
+                e.style.display = 'none';
+                e.style.pointerEvents = 'none';
+                e.style.visibility = 'hidden';
+            });
+            document.body.style.overflow = '';
+        """)
+        await page.wait_for_timeout(400)
+        _log("[TikTok] TUXModal — đã ẩn qua JS.", log)
+        return True
+
+    except Exception:
+        return False
+
+
+async def _dismiss_all_overlays(page, log: Optional[Callable]) -> None:
+    """Đóng TẤT CẢ các overlay/modal đang chặn (TUX + joyride + generic)."""
+    # TUXModal (mới nhất)
+    await _dismiss_tux_modal(page, log)
+
+    # Generic floating portals
+    try:
+        await page.evaluate("""
+            document.querySelectorAll('[data-floating-ui-portal]').forEach(el => {
+                const style = getComputedStyle(el);
+                if (style.pointerEvents !== 'none') {
+                    el.style.pointerEvents = 'none';
+                    el.style.display = 'none';
+                }
+            });
+        """)
+    except Exception:
+        pass
+
+
 async def _dismiss_tutorial_overlay(page, log: Optional[Callable]) -> None:
     """
     Đóng popup hướng dẫn TikTok Studio (react-joyride overlay).
     Overlay này chặn click vào ô caption — phải xóa trước khi điền.
     """
+    # Xử lý TUXModal trước (ưu tiên cao hơn)
+    await _dismiss_tux_modal(page, log)
+
     try:
         overlay = page.locator("[data-test-id='overlay'], .react-joyride__overlay").first
         is_visible = await overlay.is_visible()
@@ -513,21 +618,16 @@ async def _dismiss_tutorial_overlay(page, log: Optional[Callable]) -> None:
 
             # 3. Dùng JavaScript xóa cứng overlay khỏi DOM
             await page.evaluate("""
-                // Xóa react-joyride portal
                 const portal = document.getElementById('react-joyride-portal');
                 if (portal) portal.remove();
-
-                // Xóa bất kỳ overlay nào có pointer-events
                 document.querySelectorAll('[data-test-id="overlay"], .react-joyride__overlay').forEach(e => e.remove());
-
-                // Restore body pointer-events nếu bị disable
                 document.body.style.pointerEvents = '';
                 document.body.style.overflow = '';
             """)
             await page.wait_for_timeout(500)
             _log("[TikTok] Đã đóng tutorial overlay.", log)
     except Exception:
-        pass  # Không có overlay → bỏ qua
+        pass
 
 
 async def _fill_caption(page, caption: str, log: Optional[Callable]) -> None:
@@ -701,11 +801,17 @@ async def _get_upload_progress(page) -> str:
 async def _handle_post_dialogs(page, log: Optional[Callable]) -> None:
     """
     Xử lý các dialog/popup xuất hiện sau khi click Post:
+      - TUXModal-overlay (mới nhất — ưu tiên số 1)
       - "Post now" vs "Schedule" dialog
       - Copyright warning → click Continue
       - "Publish now" confirmation button
-      - Bất kỳ nút xác nhận nào khác
     """
+    # Ưu tiên 1: TUXModal mới (chặn pointer events toàn trang)
+    dismissed = await _dismiss_tux_modal(page, log)
+    if dismissed:
+        return
+
+    # Ưu tiên 2: Generic confirm buttons (text-based)
     confirm_texts = [
         "Post now", "Đăng ngay", "Publish now",
         "Continue", "Tiếp tục",
@@ -721,7 +827,7 @@ async def _handle_post_dialogs(page, log: Optional[Callable]) -> None:
                     _log(f"[TikTok] Dialog '{text}' — đang click...", log)
                     await btn.click()
                     await page.wait_for_timeout(1000)
-                    return   # chỉ xử lý 1 dialog mỗi lần
+                    return
             except Exception:
                 pass
 
