@@ -1,62 +1,69 @@
-{
-  "name": "tiktok-auto-uploader",
-  "version": "2.0.0",
-  "description": "TikTok Auto Uploader - tu dong upload video hang ngay",
-  "author": "TikTok Uploader Dev",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "release": "electron-builder --win --publish always"
-  },
-  "build": {
-    "appId": "com.tiktokuploader.app",
-    "productName": "TikTok Auto Uploader",
-    "copyright": "Copyright 2026",
-    "directories": {
-      "output": "../dist"
-    },
-    "files": [
-      "**/*",
-      "!node_modules/.cache"
-    ],
-    "extraResources": [
-      {
-        "from": "../backend-dist/",
-        "to": "backend/",
-        "filter": ["backend.exe"]
-      }
-    ],
-    "win": {
-      "target": [
-        { "target": "nsis", "arch": ["x64"] }
-      ],
-      "icon": "assets/icon.ico",
-      "signingHashAlgorithms": null,
-      "sign": null
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "TikTok Auto Uploader",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico"
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "dn29075-cell",
-      "repo": "tiktok-auto-uploader"
-    }
-  },
-  "devDependencies": {
-    "electron": "^31.0.0",
-    "electron-builder": "^24.13.0"
-  },
-  "dependencies": {
-    "electron-updater": "^6.2.0"
-  }
+﻿{
+    "name":  "tiktok-auto-uploader",
+    "version":  "2.0.1",
+    "description":  "TikTok Auto Uploader - tu dong upload video hang ngay",
+    "author":  "TikTok Uploader Dev",
+    "main":  "main.js",
+    "scripts":  {
+                    "start":  "electron .",
+                    "dev":  "electron . --dev",
+                    "build:win":  "electron-builder --win",
+                    "build:mac":  "electron-builder --mac",
+                    "release":  "electron-builder --win --publish always"
+                },
+    "build":  {
+                  "appId":  "com.tiktokuploader.app",
+                  "productName":  "TikTok Auto Uploader",
+                  "copyright":  "Copyright 2026",
+                  "directories":  {
+                                      "output":  "../dist"
+                                  },
+                  "files":  [
+                                "**/*",
+                                "!node_modules/.cache"
+                            ],
+                  "extraResources":  [
+                                         {
+                                             "from":  "../backend-dist/",
+                                             "to":  "backend/",
+                                             "filter":  [
+                                                            "backend.exe"
+                                                        ]
+                                         }
+                                     ],
+                  "win":  {
+                              "target":  [
+                                             {
+                                                 "target":  "nsis",
+                                                 "arch":  [
+                                                              "x64"
+                                                          ]
+                                             }
+                                         ],
+                              "icon":  "assets/icon.ico",
+                              "signingHashAlgorithms":  null,
+                              "sign":  null
+                          },
+                  "nsis":  {
+                               "oneClick":  false,
+                               "allowToChangeInstallationDirectory":  true,
+                               "createDesktopShortcut":  true,
+                               "createStartMenuShortcut":  true,
+                               "shortcutName":  "TikTok Auto Uploader",
+                               "installerIcon":  "assets/icon.ico",
+                               "uninstallerIcon":  "assets/icon.ico"
+                           },
+                  "publish":  {
+                                  "provider":  "github",
+                                  "owner":  "dn29075-cell",
+                                  "repo":  "tiktok-auto-uploader"
+                              }
+              },
+    "devDependencies":  {
+                            "electron":  "^31.0.0",
+                            "electron-builder":  "^24.13.0"
+                        },
+    "dependencies":  {
+                         "electron-updater":  "^6.2.0"
+                     }
 }
