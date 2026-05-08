@@ -22,3 +22,6 @@ Thumbs.db
 venv/
 .venv/
 env/
+
+backend/data/config.json
+backend/data/
