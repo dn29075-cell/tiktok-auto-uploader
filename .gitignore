@@ -1,27 +1,22 @@
-# Node
-electron/node_modules/
-electron/node_modules
-node_modules/
-
-# Build output
-dist/
-backend-dist/
-build-tmp/
-*.egg-info/
+# Python
 __pycache__/
 *.pyc
 *.pyo
-*.spec
+*.egg-info/
 
-# Temp
-*.log
-.DS_Store
-Thumbs.db
-
-# Python venv
+# Virtual env
 venv/
 .venv/
 env/
 
-backend/data/config.json
+# Data & secrets
 backend/data/
+backend/data/config.json
+
+# Logs & debug
+*.log
+backend/data/debug_screenshots/
+
+# OS
+.DS_Store
+Thumbs.db
